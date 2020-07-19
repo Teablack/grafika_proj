@@ -31,39 +31,7 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "lodepng.h"
 #include "shaderprogram.h"
 
-float x=0, y=0, z=0;
 float speed = PI;
-float stopnie = -140.0f , stopnie2 = -140.0f, angle=-90, angle2=-90 , radius = 5;
-
-
-
-void key_callback(GLFWwindow* window,int key,int scancode,int action,int mod) {
-	if (action == GLFW_PRESS) {
-		if (key == GLFW_KEY_LEFT) {
-			stopnie=stopnie+5;
-			angle = glm::radians(stopnie);
-		}
-		if (key == GLFW_KEY_RIGHT) {
-			stopnie = stopnie - 5;
-			angle = glm::radians(stopnie);
-		}
-		if (key == GLFW_KEY_UP) {
-			stopnie2 = stopnie2 - 5;
-			angle2 = glm::radians(stopnie2);
-		}
-		if (key == GLFW_KEY_DOWN) {
-			stopnie2 = stopnie2 + 5;
-			angle2 = glm::radians(stopnie2);
-		}
-		if (key == GLFW_KEY_W) {
-			radius--;
-		}
-		if (key == GLFW_KEY_S) {
-			radius++;
-		}
-
-	}
-}
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -73,8 +41,9 @@ void error_callback(int error, const char* description) {
 //Procedura inicjująca
 void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
-	glfwSetKeyCallback(window, key_callback);
 	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
+	glClearColor(0, 0, 0, 1); //Ustaw kolor czyszczenia bufora kolorów
+	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 }
 
 
@@ -84,35 +53,123 @@ void freeOpenGLProgram(GLFWwindow* window) {
     //************Tutaj umieszczaj kod, który należy wykonać po zakończeniu pętli głównej************
 }
 
+void moj_torus(float angle) {
+	//1torus
+		glm::mat4 M1 = glm::mat4(1.0f); //Zainicjuj macierz modelu macierzą jednostkową
+		M1 = glm::translate(M1, glm::vec3(-1.05f, 0.0f, 0.0f));
+		M1 = glm::rotate(M1, angle, glm::vec3(0.0f, 0.0f, 1.0f)); //Pomnóż macierz modelu razy macierz obrotu o kąt angle wokół osi Y
+		glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(M1)); //Załaduj do programu cieniującego macierz modelu
+
+		Models::torus.drawSolid(); //Narysuj obiekt
+
+	//2torus
+		glm::mat4 M2 = glm::mat4(1.0f); //Zainicjuj macierz modelu macierzą jednostkową
+		M2 = glm::translate(M2, glm::vec3(1.05f, 0.0f, 0.0f));
+		M2 = glm::rotate(M2, -angle, glm::vec3(0.0f, 0.0f, 1.0f)); //Pomnóż macierz modelu razy macierz obrotu o kąt angle wokół osi Y
+		glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(M2)); //Załaduj do programu cieniującego macierz modelu
+
+		Models::torus.drawSolid(); //Narysuj obiekt 
+
+	//kostki
+		for (int i = 0; i < 12; i++) {
+			glm::mat4 Mk = M1;
+			Mk = glm::rotate(Mk, glm::radians(30.0f * i), glm::vec3(0.0f, 0.0f, 1.0f));
+			Mk = glm::translate(Mk, glm::vec3(1.0f, 0.0f, 0.0f));
+			Mk = glm::scale(Mk, glm::vec3(0.1f, 0.1f, 0.1f));
+
+			glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(Mk)); //Załaduj do programu cieniującego macierz modelu
+			Models::cube.drawSolid(); //Narysuj obiekt
+		}
+		for (int i = 0; i < 12; i++) {
+			glm::mat4 Mk = M2;
+			Mk = glm::rotate(Mk, glm::radians(30.0f * i + 15.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			Mk = glm::translate(Mk, glm::vec3(1.0f, 0.0f, 0.0f));
+			Mk = glm::scale(Mk, glm::vec3(0.1f, 0.1f, 0.1f));
+
+			glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(Mk)); //Załaduj do programu cieniującego macierz modelu
+			Models::cube.drawSolid(); //Narysuj obiekt
+		}
+
+
+}
+
+void torusy6(float angle) {
+
+	for (int i = 0; i < 6; i++) {
+		glm::mat4 M1 = glm::mat4(1.0f);
+
+		M1 = glm::rotate(M1, glm::radians(60.0f * i), glm::vec3(0.0f, 1.0f, 0.0f));
+		M1 = glm::translate(M1, glm::vec3(0.0f, 0.0f, 2.0f));
+		if (i % 2 == 0) M1 = glm::rotate(M1, -angle, glm::vec3(0.0f, 0.0f, 1.0f));
+		else M1 = glm::rotate(M1, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+		glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(M1));
+		Models::torus.drawSolid(); //Narysuj obiekt
+
+		for (int j = 0; j < 12; j++) {
+			glm::mat4 Mk = M1;
+			Mk = glm::rotate(Mk, glm::radians(30.0f * j), glm::vec3(0.0f, 0.0f, 1.0f));
+			Mk = glm::translate(Mk, glm::vec3(1.0f, 0.0f, 0.0f));
+			Mk = glm::scale(Mk, glm::vec3(0.1f, 0.1f, 0.1f));
+
+			glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(Mk)); //Załaduj do programu cieniującego macierz modelu
+			Models::cube.drawSolid(); //Narysuj obiekt
+		}
+	}
+}
+
+void uklad_planet(float angle) {
+	//słonce
+	glm::mat4 M1 = glm::mat4(1.0f);
+	glUniform4f(spLambert->u("color"), 1.0f, 1.0f, 0.0f, 0.0f); //kolor obiektu
+	glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(M1));
+	Models::sphere.drawSolid();
+
+	//ziemia
+	glm::mat4 Z = M1;
+	Z = glm::rotate(Z, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	Z = glm::translate(Z, glm::vec3(0.0f, 0.0f, 2.0f));
+	Z = glm::scale(Z, glm::vec3(0.3f, 0.3f, 0.3f));
+
+	glUniform4f(spLambert->u("color"), 0.0f, 1.0f, 0.0f, 0.0f); //kolor obiektu
+	glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(Z));
+	Models::sphere.drawSolid();
+
+	//satelita
+
+	glm::mat4 S = Z;
+	S = glm::rotate(S, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	S = glm::translate(S, glm::vec3(0.0f, 0.0f, 2.0f));
+	S = glm::scale(S, glm::vec3(0.3f, 0.3f, 0.3f));
+
+	glUniform4f(spLambert->u("color"), 0.9f, 0.9f, 0.9f, 0.0f); //kolor obiektu
+	glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(S));
+	Models::sphere.drawSolid();
+}
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window) {
+void drawScene(GLFWwindow* window,float angle) {
 	//************Tutaj umieszczaj kod rysujący obraz******************
-	glClearColor(0.0f, 0.0f, 0.0f, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Wyczyść bufor koloru i bufor głębokości
 	
-	x = radius *sin(angle2)*cos(angle);
-	y = radius *cos(angle2);
-	z = radius *sin(angle)*sin(angle2) ;
 	
+	glm::mat4 V = glm::lookAt(glm::vec3(0.0f, 2.0f, -6.0f),
+				  glm::vec3(0.0f, 0.0f, 0.0f),
+			      glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
 
-	glm::mat4 P = glm::perspective(50.0f * PI / 180.f, 1.0f, 1.0f, 50.0f);
-	glm::mat4 V = glm::lookAt(
-		glm::vec3(x,y,z ),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
+
+	spLambert->use(); //Aktywuj program cieniujący
+	glUniform4f(spLambert->u("color"), 0, 1, 0, 1); //Ustaw kolor rysowania obiektu
+	glUniformMatrix4fv(spLambert->u("P"), 1, false, glm::value_ptr(P)); //Załaduj do programu cieniującego macierz rzutowania
+	glUniformMatrix4fv(spLambert->u("V"), 1, false, glm::value_ptr(V)); //Załaduj do programu cieniującego macierz widoku
 
 
-	glm::mat4 M = glm::mat4(1.0f);
-	spLambert->use();//Aktywacja programu cieniującego
-	glUniform4f(spLambert->u("color"), 0, 1, 0, 1);
-	glUniformMatrix4fv(spLambert->u("M"), 1, false, glm::value_ptr(M));
-	glUniformMatrix4fv(spLambert->u("P"), 1, false, glm::value_ptr(P));
-	glUniformMatrix4fv(spLambert->u("V"), 1, false, glm::value_ptr(V));
+	//moj_torus(angle);
+	//torusy6(angle);
+	uklad_planet(angle);
 
-	Models::torus.drawSolid();
 
-	glfwSwapBuffers(window);
+	glfwSwapBuffers(window); //Skopiuj bufor tylny do bufora przedniego
 }
 
 
@@ -147,12 +204,13 @@ int main(void)
 	initOpenGLProgram(window); //Operacje inicjujące
 
 	//Główna pętla
-
-
+	float angle = 0; //zadeklaruj zmienną przechowującą aktualny kąt obrotu
+	glfwSetTime(0); //Wyzeruj licznik czasu
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
 	{
-
-		drawScene(window); //Wykonaj procedurę rysującą
+		angle += speed * glfwGetTime(); //Oblicz kąt o jaki obiekt obrócił się podczas poprzedniej klatki
+		glfwSetTime(0); //Wyzeruj licznik czasu
+		drawScene(window,angle); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
