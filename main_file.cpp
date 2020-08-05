@@ -33,12 +33,13 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "shaderprogram.h"
 #include "myCube.h"
 
-float speed_x = 0;//[radiany/s]
-float speed_y = 0;//[radiany/s]
+//float speed_x = 0;//[radiany/s]
+//float speed_y = 0;//[radiany/s]
 
 
-float speed = PI;
-float	stopnie=90.0f, 
+//float speed = PI;
+GLuint tex;
+float	stopnie=90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
 		stopnie2=90.0f, 
 		angle= glm::radians(stopnie), 
 		angle2= glm::radians(stopnie2), 
@@ -50,7 +51,29 @@ void error_callback(int error, const char* description) {
 }
 
 
+//Funkcja wczytująca teksturę 
+GLuint readTexture(char* filename) {
+	GLuint tex;
+	glActiveTexture(GL_TEXTURE0);
 
+	//Wczytanie do pamięci komputera
+	std::vector<unsigned char> image;   //Alokuj wektor do wczytania obrazka
+	unsigned width, height;   //Zmienne do których wczytamy wymiary obrazka
+	//Wczytaj obrazek
+	unsigned error = lodepng::decode(image, width, height, filename);
+
+	//Import do pamięci karty graficznej
+	glGenTextures(1, &tex); //Zainicjuj jeden uchwyt
+	glBindTexture(GL_TEXTURE_2D, tex); //Uaktywnij uchwyt
+	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	return tex;
+}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod) {
 	
@@ -89,7 +112,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
 	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
-	glClearColor(0, 0, 0, 1); //Ustaw kolor czyszczenia bufora kolorów
+	//Wczytanie i import obrazka – w initOpenGLProgram
+	//tex = readTexture("bricks.png");
+	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
 }
@@ -102,7 +127,7 @@ void freeOpenGLProgram(GLFWwindow* window) {
 }
 
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window,float angle_x,float angle_y, float x, float y , float z) {
+void drawScene(GLFWwindow* window,float x, float y, float z, float height, int branch_count) {
 	
 	//************Tutaj umieszczaj kod rysujący obraz******************l
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Wyczyść bufor koloru i bufor głębokości
@@ -115,42 +140,73 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y, float x, float y 
 							  glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
 
-	//Tablica współrzędnych wierzchołków
+//drzewo 
+	//Tablica współrzędnych wierzchołków 
 	
-	//drzewo 
 	float verts[] = {
-		/*
-		-4,0,0,1,		-2,0,-3.5,1, //ab
-		-2,0,-3.5,1,	2,0,-3.5,1,//bc
-		2,0,-3.5,1,		4,0,0,1,//cd
-		4,0,0,1,		2,0,3.5,1,//de
-		2,0,3.5,1,		-2,0,3.5,1,//ef
-		-2,0,3.5,1,		-4,0,0,1,//fa
-		*/
 
-		0,30,0,1,
-		-4,0,0,1,		-2,0,-3.5,1, 
-		2,0,-3.5,1,		4,0,0,1,
-		2,0,3.5,1,		-2,0,3.5,1,
-		-2,0,3.5,1,		-4,0,0,1,
-		-4,0,0,1
-		
+		 0.000000,-0.016799,-0.018462,1,
+		 0.003602,-0.016799,-0.018107,1,
+		 0.007066,-0.016799,-0.017057,1,
+		 0.010257,-0.016799,-0.015351,1,
+		 0.013055,-0.016799,-0.013055,1,
+		 0.015351,-0.016799,-0.010257,1,
+		 0.017057,-0.016799,-0.007066,1,
+		 0.018107,-0.016799,-0.003602,1,
+		 0.018462,-0.016799,-0.000000,1,
+		 0.018107,-0.016799,0.003602,1,
+		 0.017057,-0.016799,0.007066,1,
+		 0.015351,-0.016799,0.010257,1,
+		 0.013055,-0.016799,0.013055,1,
+		 0.010257,-0.016799,0.015351,1,
+		 0.007066,-0.016799,0.017057,1,
+		 0.003602,-0.016799,0.018107,1,
+		 -0.000000,-0.016799,0.018462,1,
+		 -0.003602,-0.016799,0.018107,1,
+		 -0.007066,-0.016799,0.017057,1,
+		 -0.010257,-0.016799,0.015351,1,
+		 -0.013055,-0.016799,0.013055,1,
+		 -0.015351,-0.016799,0.010257,1,
+		 -0.017057,-0.016799,0.007066,1,
+		 0.000000,0.148564,-0.000000,1,
+		 -0.018107,-0.016799,0.003602,1,
+		 -0.018462,-0.016799,-0.000000,1,
+		 -0.018107,-0.016799,-0.003602,1,
+		 -0.017057,-0.016799,-0.007066,1,
+		 -0.015351,-0.016799,-0.010257,1,
+		 -0.013055,-0.016799,-0.013055,1,
+		 -0.010257,-0.016799,-0.015351,1,
+		 -0.007066,-0.016799,-0.017057,1,
+		 -0.003602,-0.016799,-0.018107,1
+
 	};
-	int vertexCount = 10;
-
-
-	spConstant->use();
-	glUniformMatrix4fv(spConstant->u("P"), 1, false, glm::value_ptr(P));
-	glUniformMatrix4fv(spConstant->u("V"), 1, false, glm::value_ptr(V));
-	M = glm::scale(M, glm::vec3(0.05f, 0.05f, 0.05f));
-	glUniformMatrix4fv(spConstant->u("M"), 1, false, glm::value_ptr(M));
-	glUniform4f(spConstant->u("color"), 1, 0, 0, 1);
-	glEnableVertexAttribArray(spConstant->a("vertex"));
-	glVertexAttribPointer(spConstant->a("vertex"), 4, GL_FLOAT, false, 0, verts);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
-	glDisableVertexAttribArray(spConstant->a("vertex"));
 
 	
+
+
+	int vertexCount = 33;
+
+	spColored->use();
+	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
+	glUniformMatrix4fv(spColored->u("V"), 1, false, glm::value_ptr(V));
+	M = glm::translate(M, glm::vec3(0, height*3.5f ,0));
+	M = glm::scale(M, glm::vec3(height*200, height * 200, height *200));
+	//M= glm::translate(M, glm::vec3(0,-0.05f ,0));
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(M));
+	glUniform4f(spColored->u("color"), 0.58f, 0.29f, 0, 1);
+	glEnableVertexAttribArray(spColored->a("vertex"));
+	glVertexAttribPointer(spColored->a("vertex"), 4, GL_FLOAT, false, 0, verts);
+	glDrawArrays(GL_POINTS, 0, vertexCount);
+	glDisableVertexAttribArray(spColored->a("vertex"));
+
+	//gałęzie
+	
+	for (int i = 0; i < branch_count; i++) {
+	
+	
+	}
+
+	 
 
 
 	glfwSwapBuffers(window); //Skopiuj bufor tylny do bufora przedniego
@@ -189,20 +245,29 @@ int main(void)
 
 	//Główna pętla
 	
-	float x, y, z;
-	float angle_x = 0; //zadeklaruj zmienną przechowującą aktualny kąt obrotu
-	float angle_y = 0; //zadeklaruj zmienną przechowującą aktualny kąt obrotu
+	float x, y, z, height=0.0f;  
 	glfwSetTime(0); //Wyzeruj licznik czasu
 
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
 	{
-
 		x = radius * sin(angle2) * cos(angle);
 		y = radius * cos(angle2);
 		z = radius * sin(angle) * sin(angle2);
 		
+		float max_height = 0.07f; //na potem: powinno być losowane 
+		int branch_count=5; //na potem: powinno być losowane 
+		while (height < max_height) { 
+			x = radius * sin(angle2) * cos(angle);
+			y = radius * cos(angle2);
+			z = radius * sin(angle) * sin(angle2);
+			height += 0.01f* glfwGetTime();
+			glfwSetTime(0);
+			drawScene(window, x, y, z, height, branch_count); //Wykonaj procedurę rysującą
+			glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
+		}
+
 		glfwSetTime(0); //Wyzeruj licznik czasu
-		drawScene(window,angle_x,angle_y,x,y,z); //Wykonaj procedurę rysującą
+		drawScene(window,x,y,z,height, branch_count); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
