@@ -52,7 +52,7 @@ void error_callback(int error, const char* description) {
 
 
 //Funkcja wczytująca teksturę 
-GLuint readTexture(char* filename) {
+GLuint readTexture(const char* filename) {
 	GLuint tex;
 	glActiveTexture(GL_TEXTURE0);
 
@@ -113,7 +113,7 @@ void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
 	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
 	//Wczytanie i import obrazka – w initOpenGLProgram
-	//tex = readTexture("bricks.png");
+	tex = readTexture("kora.png");
 	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
