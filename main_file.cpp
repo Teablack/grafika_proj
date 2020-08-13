@@ -31,13 +31,9 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "allmodels.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
-#include "myCube.h"
-
-//float speed_x = 0;//[radiany/s]
-//float speed_y = 0;//[radiany/s]
+#include "ziemia.c"
 
 
-//float speed = PI;
 GLuint tex;
 float	stopnie=90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
 		stopnie2=90.0f, 
@@ -68,10 +64,9 @@ GLuint readTexture(const char* filename) {
 	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
+	
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+	
 	return tex;
 }
 
@@ -113,7 +108,7 @@ void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
 	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
 	//Wczytanie i import obrazka – w initOpenGLProgram
-	tex = readTexture("kora.png");
+	tex = readTexture("unnamed.png");
 	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
@@ -140,64 +135,39 @@ void drawScene(GLFWwindow* window,float x, float y, float z, float height, int b
 							  glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
 
-//drzewo 
-	//Tablica współrzędnych wierzchołków 
-	
-	float verts[] = {
-
-		 0.000000,-0.016799,-0.018462,1,
-		 0.003602,-0.016799,-0.018107,1,
-		 0.007066,-0.016799,-0.017057,1,
-		 0.010257,-0.016799,-0.015351,1,
-		 0.013055,-0.016799,-0.013055,1,
-		 0.015351,-0.016799,-0.010257,1,
-		 0.017057,-0.016799,-0.007066,1,
-		 0.018107,-0.016799,-0.003602,1,
-		 0.018462,-0.016799,-0.000000,1,
-		 0.018107,-0.016799,0.003602,1,
-		 0.017057,-0.016799,0.007066,1,
-		 0.015351,-0.016799,0.010257,1,
-		 0.013055,-0.016799,0.013055,1,
-		 0.010257,-0.016799,0.015351,1,
-		 0.007066,-0.016799,0.017057,1,
-		 0.003602,-0.016799,0.018107,1,
-		 -0.000000,-0.016799,0.018462,1,
-		 -0.003602,-0.016799,0.018107,1,
-		 -0.007066,-0.016799,0.017057,1,
-		 -0.010257,-0.016799,0.015351,1,
-		 -0.013055,-0.016799,0.013055,1,
-		 -0.015351,-0.016799,0.010257,1,
-		 -0.017057,-0.016799,0.007066,1,
-		 0.000000,0.148564,-0.000000,1,
-		 -0.018107,-0.016799,0.003602,1,
-		 -0.018462,-0.016799,-0.000000,1,
-		 -0.018107,-0.016799,-0.003602,1,
-		 -0.017057,-0.016799,-0.007066,1,
-		 -0.015351,-0.016799,-0.010257,1,
-		 -0.013055,-0.016799,-0.013055,1,
-		 -0.010257,-0.016799,-0.015351,1,
-		 -0.007066,-0.016799,-0.017057,1,
-		 -0.003602,-0.016799,-0.018107,1
-
-	};
+//ziemia
 
 	
+	//float verts[] = {
 
+	//float texCoords[] = {
 
-	int vertexCount = 33;
+	//int vertexCount = 866;
 
-	spColored->use();
-	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
-	glUniformMatrix4fv(spColored->u("V"), 1, false, glm::value_ptr(V));
-	M = glm::translate(M, glm::vec3(0, height*3.5f ,0));
-	M = glm::scale(M, glm::vec3(height*200, height * 200, height *200));
-	//M= glm::translate(M, glm::vec3(0,-0.05f ,0));
-	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(M));
-	glUniform4f(spColored->u("color"), 0.58f, 0.29f, 0, 1);
-	glEnableVertexAttribArray(spColored->a("vertex"));
-	glVertexAttribPointer(spColored->a("vertex"), 4, GL_FLOAT, false, 0, verts);
-	glDrawArrays(GL_POINTS, 0, vertexCount);
-	glDisableVertexAttribArray(spColored->a("vertex"));
+	spTextured->use();
+	glUniformMatrix4fv(spTextured->u("P"), 1, false, glm::value_ptr(P));
+	glUniformMatrix4fv(spTextured->u("V"), 1, false, glm::value_ptr(V));
+	
+
+	//M = glm::translate(M, glm::vec3(0, height*3.5f ,0));
+	//M = glm::scale(M, glm::vec3(height*200, height * 200, height *200));
+	M= glm::translate(M, glm::vec3(0,-2.0f ,0));
+	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(M));
+	glEnableVertexAttribArray(spTextured->a("vertex"));
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, ziemiaPositions);
+	glEnableVertexAttribArray(spTextured->a("texCoord"));
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, ziemiaTexels);
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, tex);
+	glUniform1i(spTextured->u("tex"), 0);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glDrawArrays(GL_TRIANGLES, 0, ziemiaVertices);
+	glDisableVertexAttribArray(spTextured->a("vertex"));
+	glDisableVertexAttribArray(spTextured->a("textCoord")); 
 
 	//gałęzie
 	
