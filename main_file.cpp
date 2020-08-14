@@ -32,9 +32,11 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "lodepng.h"
 #include "shaderprogram.h"
 #include "ziemia.c"
+#include "pien.c"
 
 
-GLuint tex;
+GLuint ziemia_tex,
+	   pien_tex;
 float	stopnie=90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
 		stopnie2=90.0f, 
 		angle= glm::radians(stopnie), 
@@ -108,7 +110,8 @@ void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
 	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
 	//Wczytanie i import obrazka – w initOpenGLProgram
-	tex = readTexture("unnamed.png");
+	ziemia_tex = readTexture("trawa.png");
+	pien_tex = readTexture("kora.png");
 	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
@@ -124,40 +127,28 @@ void freeOpenGLProgram(GLFWwindow* window) {
 //Procedura rysująca zawartość sceny
 void drawScene(GLFWwindow* window,float x, float y, float z, float height, int branch_count) {
 	
-	//************Tutaj umieszczaj kod rysujący obraz******************l
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Wyczyść bufor koloru i bufor głębokości
-	
-	glm::mat4 M = glm::mat4(1.0f); //Zainicjuj macierz modelu macierzą jednostkową
-	
 	
 	glm::mat4 V = glm::lookAt(glm::vec3(x,y,z), 
 							  glm::vec3(0.0f, 0.0f, 0.0f), 
 							  glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
 
-//ziemia
-
-	
-	//float verts[] = {
-
-	//float texCoords[] = {
-
-	//int vertexCount = 866;
-
 	spTextured->use();
 	glUniformMatrix4fv(spTextured->u("P"), 1, false, glm::value_ptr(P));
 	glUniformMatrix4fv(spTextured->u("V"), 1, false, glm::value_ptr(V));
-	
 
-	//M = glm::translate(M, glm::vec3(0, height*3.5f ,0));
-	//M = glm::scale(M, glm::vec3(height*200, height * 200, height *200));
-	M= glm::translate(M, glm::vec3(0,-2.0f ,0));
+//ziemia
+
+	glm::mat4 M = glm::mat4(1.0f); //Zainicjuj macierz modelu macierzą jednostkową
+	M = glm::translate(M, glm::vec3(0,-2.0f ,0));
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(M));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
 	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, ziemiaPositions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
 	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, ziemiaTexels);
-	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, tex);
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, ziemia_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -169,7 +160,35 @@ void drawScene(GLFWwindow* window,float x, float y, float z, float height, int b
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("textCoord")); 
 
-	//gałęzie
+	
+//pień
+	glm::mat4 Pien = glm::mat4(1.0f);
+
+	
+	//Pien = glm::translate(M, glm::vec3(0, 1.0, 0));
+	Pien = glm::translate(Pien, glm::vec3(0,height*7-1.5, 0));
+	Pien = glm::scale(Pien, glm::vec3(height,height,height));
+	//Pien = glm::scale(Pien, glm::vec3(height, height, height));
+	//Pien = glm::translate(Pien, glm::vec3(0,height*height, 0));
+
+	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Pien));
+	glEnableVertexAttribArray(spTextured->a("vertex"));
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, pienPositions);
+	glEnableVertexAttribArray(spTextured->a("texCoord"));
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pienTexels);
+	(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
+	glUniform1i(spTextured->u("tex"), 0);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glDrawArrays(GL_TRIANGLES, 0, pienVertices);
+	glDisableVertexAttribArray(spTextured->a("vertex"));
+	glDisableVertexAttribArray(spTextured->a("textCoord"));
+
+//gałęzie
 	
 	for (int i = 0; i < branch_count; i++) {
 	
@@ -224,7 +243,7 @@ int main(void)
 		y = radius * cos(angle2);
 		z = radius * sin(angle) * sin(angle2);
 		
-		float max_height = 0.07f; //na potem: powinno być losowane 
+		float max_height = 0.2f; //na potem: powinno być losowane 
 		int branch_count=5; //na potem: powinno być losowane 
 		while (height < max_height) { 
 			x = radius * sin(angle2) * cos(angle);
