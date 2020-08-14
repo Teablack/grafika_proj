@@ -31,7 +31,7 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "allmodels.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
-#include "ziemia.c"
+#include "ziemia2.c"
 #include "pien.c"
 
 
@@ -108,10 +108,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 //Procedura inicjująca
 void initOpenGLProgram(GLFWwindow* window) {
     initShaders();
-	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
+
 	//Wczytanie i import obrazka – w initOpenGLProgram
-	ziemia_tex = readTexture("trawa.png");
-	pien_tex = readTexture("kora.png");
+	ziemia_tex = readTexture("ziemia_tex128.png");
+	pien_tex = readTexture("kora128_256.png");
 	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
@@ -125,38 +125,46 @@ void freeOpenGLProgram(GLFWwindow* window) {
 }
 
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window,float x, float y, float z, float height, int branch_count) {
-	
+void drawScene(GLFWwindow* window, float x, float y, float z, float height, int first_level_branch_count) {
+
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Wyczyść bufor koloru i bufor głębokości
-	
-	glm::mat4 V = glm::lookAt(glm::vec3(x,y,z), 
-							  glm::vec3(0.0f, 0.0f, 0.0f), 
-							  glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
+
+	glm::mat4 V = glm::lookAt(glm::vec3(x, y, z),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
 
 	spTextured->use();
 	glUniformMatrix4fv(spTextured->u("P"), 1, false, glm::value_ptr(P));
 	glUniformMatrix4fv(spTextured->u("V"), 1, false, glm::value_ptr(V));
 
-//ziemia
+	//ziemia
 
 	glm::mat4 M = glm::mat4(1.0f); //Zainicjuj macierz modelu macierzą jednostkową
-	M = glm::translate(M, glm::vec3(0,-2.0f ,0));
+	M = glm::translate(M, glm::vec3(0, -2.0f, 0));
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(M));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
-	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, ziemiaPositions);
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, ziemia2Positions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
-	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, ziemiaTexels);
+
+	float ziemia_tex_copy[62964];
+	memcpy(ziemia_tex_copy, ziemia2Texels, sizeof(ziemia_tex_copy));
+	for (int i = 0; i < 62964; i++) {
+		ziemia_tex_copy[i] *= ziemia_tex_copy[i] * 5.0f;
+	}
+
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, ziemia_tex_copy);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, ziemia_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glDrawArrays(GL_TRIANGLES, 0, ziemiaVertices);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_MIRRORED_REPEAT);
+
+	glDrawArrays(GL_TRIANGLES, 0, ziemia2Vertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("textCoord")); 
 
@@ -164,25 +172,29 @@ void drawScene(GLFWwindow* window,float x, float y, float z, float height, int b
 //pień
 	glm::mat4 Pien = glm::mat4(1.0f);
 
-	
-	//Pien = glm::translate(M, glm::vec3(0, 1.0, 0));
-	Pien = glm::translate(Pien, glm::vec3(0,height*7-1.5, 0));
+	Pien = glm::translate(Pien, glm::vec3(0,height*7.0-1.9, 0));
 	Pien = glm::scale(Pien, glm::vec3(height,height,height));
-	//Pien = glm::scale(Pien, glm::vec3(height, height, height));
-	//Pien = glm::translate(Pien, glm::vec3(0,height*height, 0));
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Pien));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
 	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, pienPositions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
-	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pienTexels);
-	(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
+
+	float pien_tex_copy[2292];
+	memcpy(pien_tex_copy, pienTexels, sizeof(pien_tex_copy));
+	for (int i = 0; i < 2292; i++) {
+		pien_tex_copy[i] *= pien_tex_copy[i] * 5.0f;
+	}
+
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pien_tex_copy);
+	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 
 	glDrawArrays(GL_TRIANGLES, 0, pienVertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
@@ -190,7 +202,7 @@ void drawScene(GLFWwindow* window,float x, float y, float z, float height, int b
 
 //gałęzie
 	
-	for (int i = 0; i < branch_count; i++) {
+	for (int i = 0; i < first_level_branch_count; i++) {
 	
 	
 	}
@@ -205,14 +217,11 @@ void drawScene(GLFWwindow* window,float x, float y, float z, float height, int b
 int main(void)
 {
 	GLFWwindow* window; //Wskaźnik na obiekt reprezentujący okno
-
 	glfwSetErrorCallback(error_callback);//Zarejestruj procedurę obsługi błędów
-
 	if (!glfwInit()) { //Zainicjuj bibliotekę GLFW
 		fprintf(stderr, "Nie można zainicjować GLFW.\n");
 		exit(EXIT_FAILURE);
 	}
-
 	window = glfwCreateWindow(500, 500, "OpenGL", NULL, NULL);  //Utwórz okno 500x500 o tytule "OpenGL" i kontekst OpenGL.
 
 	if (!window) //Jeżeli okna nie udało się utworzyć, to zamknij program
@@ -221,42 +230,44 @@ int main(void)
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
-
 	glfwMakeContextCurrent(window); //Od tego momentu kontekst okna staje się aktywny i polecenia OpenGL będą dotyczyć właśnie jego.
 	glfwSwapInterval(1); //Czekaj na 1 powrót plamki przed pokazaniem ukrytego bufora
-
 	if (glewInit() != GLEW_OK) { //Zainicjuj bibliotekę GLEW
 		fprintf(stderr, "Nie można zainicjować GLEW.\n");
 		exit(EXIT_FAILURE);
 	}
-
 	initOpenGLProgram(window); //Operacje inicjujące
+
 
 	//Główna pętla
 	
-	float x, y, z, height=0.0f;  
-	glfwSetTime(0); //Wyzeruj licznik czasu
+	float	x, y, z,		//zmienne pozycji kamery
+			height=0.0f;	//aktualna wysokość pnia
+	glfwSetTime(0);			//Wyzeruj licznik czasu
 
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
 	{
+		//wyliczenie aktualnej pozycji kamery
 		x = radius * sin(angle2) * cos(angle);
 		y = radius * cos(angle2);
 		z = radius * sin(angle) * sin(angle2);
 		
-		float max_height = 0.2f; //na potem: powinno być losowane 
-		int branch_count=5; //na potem: powinno być losowane 
+		float max_height = 0.2f;					//na potem: powinno być losowane 
+		int first_level_branch_count = 5;	
+		//na potem: powinno być losowane ;ilość gałezi 1 poziomu
 		while (height < max_height) { 
+
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
 			height += 0.01f* glfwGetTime();
 			glfwSetTime(0);
-			drawScene(window, x, y, z, height, branch_count); //Wykonaj procedurę rysującą
+			drawScene(window, x, y, z, height, first_level_branch_count); //Wykonaj procedurę rysującą
 			glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 		}
 
 		glfwSetTime(0); //Wyzeruj licznik czasu
-		drawScene(window,x,y,z,height, branch_count); //Wykonaj procedurę rysującą
+		drawScene(window,x,y,z,height, first_level_branch_count); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
