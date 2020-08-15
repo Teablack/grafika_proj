@@ -31,17 +31,18 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "allmodels.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
-#include "ziemia2.c"
+//#include "ziemia2.c"
 #include "pien.c"
+#include "ziemia3.c"
 
 
 GLuint ziemia_tex,
-	   pien_tex;
-float	stopnie=90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
-		stopnie2=90.0f, 
-		angle= glm::radians(stopnie), 
-		angle2= glm::radians(stopnie2), 
-		radius=5.0f;
+pien_tex;
+float	stopnie = 90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
+stopnie2 = 90.0f,
+angle = glm::radians(stopnie),
+angle2 = glm::radians(stopnie2),
+radius = 5.0f;
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -66,21 +67,21 @@ GLuint readTexture(const char* filename) {
 	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
-	
 
-	
+
+
 	return tex;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod) {
-	
+
 	if (action == GLFW_PRESS) {
-		
+
 		if (key == GLFW_KEY_LEFT) {
-			
+
 			stopnie = stopnie + 5;
 			angle = glm::radians(stopnie);
-		
+
 		}
 		if (key == GLFW_KEY_RIGHT) {
 			stopnie = stopnie - 5;
@@ -100,14 +101,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if (key == GLFW_KEY_S) {
 			radius++;
 		}
-		
+
 	}
 }
 
 
 //Procedura inicjująca
 void initOpenGLProgram(GLFWwindow* window) {
-    initShaders();
+	initShaders();
 
 	//Wczytanie i import obrazka – w initOpenGLProgram
 	ziemia_tex = readTexture("ziemia_tex128.png");
@@ -120,8 +121,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 //Zwolnienie zasobów zajętych przez program
 void freeOpenGLProgram(GLFWwindow* window) {
-    freeShaders();
-    //************Tutaj umieszczaj kod, który należy wykonać po zakończeniu pętli głównej************
+	freeShaders();
+	//************Tutaj umieszczaj kod, który należy wykonać po zakończeniu pętli głównej************
 }
 
 //Procedura rysująca zawartość sceny
@@ -145,35 +146,29 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, int 
 	M = glm::translate(M, glm::vec3(0, -2.0f, 0));
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(M));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
-	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, ziemia2Positions);
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, ziemia3Positions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
 
-	float ziemia_tex_copy[62964];
-	memcpy(ziemia_tex_copy, ziemia2Texels, sizeof(ziemia_tex_copy));
-	for (int i = 0; i < 62964; i++) {
-		ziemia_tex_copy[i] *= ziemia_tex_copy[i] * 5.0f;
-	}
-
-	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, ziemia_tex_copy);
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, ziemia3Texels);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, ziemia_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 
-	glDrawArrays(GL_TRIANGLES, 0, ziemia2Vertices);
+	glDrawArrays(GL_TRIANGLES, 0, ziemia3Vertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
-	glDisableVertexAttribArray(spTextured->a("textCoord")); 
+	glDisableVertexAttribArray(spTextured->a("textCoord"));
 
-	
-//pień
+
+	//pień
 	glm::mat4 Pien = glm::mat4(1.0f);
 
-	Pien = glm::translate(Pien, glm::vec3(0,height*7.0-1.9, 0));
-	Pien = glm::scale(Pien, glm::vec3(height,height,height));
+	Pien = glm::translate(Pien, glm::vec3(0, height * 7.0 - 1.9, 0));
+	Pien = glm::scale(Pien, glm::vec3(height, height, height));
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Pien));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
@@ -200,14 +195,14 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, int 
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("textCoord"));
 
-//gałęzie
-	
+	//gałęzie
+
 	for (int i = 0; i < first_level_branch_count; i++) {
-	
-	
+
+
 	}
 
-	 
+
 
 
 	glfwSwapBuffers(window); //Skopiuj bufor tylny do bufora przedniego
@@ -240,9 +235,9 @@ int main(void)
 
 
 	//Główna pętla
-	
+
 	float	x, y, z,		//zmienne pozycji kamery
-			height=0.0f;	//aktualna wysokość pnia
+		height = 0.0f;	//aktualna wysokość pnia
 	glfwSetTime(0);			//Wyzeruj licznik czasu
 
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
@@ -251,23 +246,23 @@ int main(void)
 		x = radius * sin(angle2) * cos(angle);
 		y = radius * cos(angle2);
 		z = radius * sin(angle) * sin(angle2);
-		
+
 		float max_height = 0.2f;					//na potem: powinno być losowane 
-		int first_level_branch_count = 5;	
+		int first_level_branch_count = 5;
 		//na potem: powinno być losowane ;ilość gałezi 1 poziomu
-		while (height < max_height) { 
+		while (height < max_height) {
 
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
-			height += 0.01f* glfwGetTime();
+			height += 0.01f * glfwGetTime();
 			glfwSetTime(0);
 			drawScene(window, x, y, z, height, first_level_branch_count); //Wykonaj procedurę rysującą
 			glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 		}
 
 		glfwSetTime(0); //Wyzeruj licznik czasu
-		drawScene(window,x,y,z,height, first_level_branch_count); //Wykonaj procedurę rysującą
+		drawScene(window, x, y, z, height, first_level_branch_count); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
