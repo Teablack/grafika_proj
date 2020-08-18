@@ -31,18 +31,23 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "allmodels.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
+#include <time.h>  
 #include "pien1.c"
 #include "ziemia3.c"
 #include "galez.c"
 
 
-GLuint ziemia_tex,
-pien_tex;
+GLuint	ziemia_tex,
+		pien_tex;
 float	stopnie = 90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
-stopnie2 = 90.0f,
-angle = glm::radians(stopnie),
-angle2 = glm::radians(stopnie2),
-radius = 5.0f;
+		stopnie2 = 90.0f,
+		angle = glm::radians(stopnie),
+		angle2 = glm::radians(stopnie2),
+		radius = 5.0f,
+		angle_x[5],
+		angle_z[5],
+		wysokosc[5];
+;
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -187,25 +192,22 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 
 	//gałęzie
 	
-	
-		float	wys = -5.0f,
-				angle_x = -0.3f,
-				angle_z = 1.3f
-				;
 
-		if (height >= max_height / 2.0f ) {
+	
+	for (int i = 0; i < first_level_branch_count; i++) {
+		if (height >= max_height / 2.0f) {
 
 			glm::mat4 Galaz = Pien;
-			
-			Galaz = translate(Galaz, glm::vec3(0.0f, wys, 0.0f));
 
-			Galaz = glm::rotate(Galaz, angle_x, glm::vec3(0.0f, 0.0f, 1.0f));
-			Galaz = glm::rotate(Galaz, angle_z, glm::vec3(1.0f, 0.0f, 0.0f));
-			if (angle_x > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 11.8f * branch_height * 2.8f * sin(angle_x + 0.8), 0.0f)); //yxz
-			else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x- 0.8f),0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
-			
+			Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i], 0.0f));
+
+			Galaz = glm::rotate(Galaz, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
+			Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
+			if (angle_x[i] > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 11.8f * branch_height * 2.8f * sin(angle_x[i] + 0.8), 0.0f)); //yxz
+			else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
+
 			Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
-			
+
 
 			glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
 			glEnableVertexAttribArray(spTextured->a("vertex"));
@@ -225,10 +227,6 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 
 
 		}
-
-	
-	for (int i = 0; i < first_level_branch_count; i++) {
-
 		
 
 	}
@@ -265,9 +263,30 @@ int main(void)
 	//Główna pętla
 
 	float	x, y, z,											//zmienne pozycji kamery
-		height = 0.0f;											//aktualna wysokość pnia
-	float max_height = 0.2f,branch_height=0.0f;					//na potem: powinno być losowane 
-	int first_level_branch_count = 5;							//na potem: powinno być losowane ;ilość gałezi 1 poziomu
+			height = 0.0f,											//aktualna wysokość pnia
+			max_height = 0.2f,branch_height=0.0f;					//na potem: powinno być losowane 
+	int first_level_branch_count = rand() % 3 + 3;				//ilość gałezi 1 poziomu wartosci od 3 do 5
+	
+	srand(static_cast<unsigned int>(time(0)));
+	for (int i = 0; i < first_level_branch_count;i++) {
+
+		if(int even = rand() % 2)
+			angle_x[i] = (rand() % 100+30) / 100.0f;
+		else
+			angle_x[i] = (rand() % 100-130) / 100.0f;
+
+		printf("x %f\n", angle_x[i]);
+
+		if (int even = rand() % 2)
+			angle_z[i] = (rand() % 100 + 30) / 100.0f;
+		else
+			angle_z[i] = (rand() % 100 - 130) / 100.0f;
+		printf("z %f\n", angle_z[i]);
+		wysokosc[i] = rand()% 13 - 9;
+
+	}
+
+	 
 	
 
 	glfwSetTime(0);			//Wyzeruj licznik czasu
@@ -285,11 +304,11 @@ int main(void)
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
 			height += 0.03f * glfwGetTime();
-			//printf(" \n h: %f max: %f \n ",height,max_height);
+			
 			if (height >= max_height /2.0f && branch_height <= 0.2) {
-				branch_height += 0.005f;
+				branch_height += 0.001f;
 			}
-			//printf("%f\n",branch_height);
+			
 			glfwSetTime(0);
 			drawScene(window, x, y, z, height,max_height, branch_height,first_level_branch_count); //Wykonaj procedurę rysującą
 			glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
