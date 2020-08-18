@@ -31,9 +31,9 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "allmodels.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
-//#include "ziemia2.c"
-#include "pien.c"
+#include "pien1.c"
 #include "ziemia3.c"
+#include "galez.c"
 
 
 GLuint ziemia_tex,
@@ -67,8 +67,6 @@ GLuint readTexture(const char* filename) {
 	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
-
-
 
 	return tex;
 }
@@ -126,7 +124,7 @@ void freeOpenGLProgram(GLFWwindow* window) {
 }
 
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window, float x, float y, float z, float height, int first_level_branch_count) {
+void drawScene(GLFWwindow* window, float x, float y, float z, float height, float max_height, float branch_height, int first_level_branch_count) {
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Wyczyść bufor koloru i bufor głębokości
@@ -134,7 +132,7 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, int 
 	glm::mat4 V = glm::lookAt(glm::vec3(x, y, z),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
-	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f); //Wylicz macierz rzutowania
+	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f);		//Wylicz macierz rzutowania
 
 	spTextured->use();
 	glUniformMatrix4fv(spTextured->u("P"), 1, false, glm::value_ptr(P));
@@ -142,7 +140,7 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, int 
 
 	//ziemia
 
-	glm::mat4 M = glm::mat4(1.0f); //Zainicjuj macierz modelu macierzą jednostkową
+	glm::mat4 M = glm::mat4(1.0f);										//Zainicjuj macierz modelu macierzą jednostkową
 	M = glm::translate(M, glm::vec3(0, -2.0f, 0));
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(M));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
@@ -153,8 +151,8 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, int 
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, ziemia_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
@@ -167,45 +165,75 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, int 
 	//pień
 	glm::mat4 Pien = glm::mat4(1.0f);
 
-	Pien = glm::translate(Pien, glm::vec3(0, height * 7.0 - 1.9, 0));
+	Pien = glm::translate(Pien, glm::vec3(0, height * 12.5 - 1.8, 0));
 	Pien = glm::scale(Pien, glm::vec3(height, height, height));
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Pien));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
-	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, pienPositions);
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, pien1Positions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
 
-	float pien_tex_copy[2292];
-	memcpy(pien_tex_copy, pienTexels, sizeof(pien_tex_copy));
-	for (int i = 0; i < 2292; i++) {
-		pien_tex_copy[i] *= pien_tex_copy[i] * 5.0f;
-	}
-
-	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pien_tex_copy);
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pien1Texels);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-
-	glDrawArrays(GL_TRIANGLES, 0, pienVertices);
+	glDrawArrays(GL_TRIANGLES, 0, pien1Vertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("textCoord"));
 
-	//gałęzie
 
+	//gałęzie
+	
+	
+		float	wys = -5.0f,
+				angle_x = -0.3f,
+				angle_z = 1.3f
+				;
+
+		if (height >= max_height / 2.0f ) {
+
+			glm::mat4 Galaz = Pien;
+			
+			Galaz = translate(Galaz, glm::vec3(0.0f, wys, 0.0f));
+
+			Galaz = glm::rotate(Galaz, angle_x, glm::vec3(0.0f, 0.0f, 1.0f));
+			Galaz = glm::rotate(Galaz, angle_z, glm::vec3(1.0f, 0.0f, 0.0f));
+			if (angle_x > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 11.8f * branch_height * 2.8f * sin(angle_x + 0.8), 0.0f)); //yxz
+			else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x- 0.8f),0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
+			
+			Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
+			
+
+			glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
+			glEnableVertexAttribArray(spTextured->a("vertex"));
+			glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galezPositions);
+			glEnableVertexAttribArray(spTextured->a("texCoord"));
+
+			glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galezTexels);
+			glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
+			glUniform1i(spTextured->u("tex"), 0);
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			glDrawArrays(GL_TRIANGLES, 0, galezVertices);
+			glDisableVertexAttribArray(spTextured->a("vertex"));
+			glDisableVertexAttribArray(spTextured->a("textCoord"));
+
+
+		}
+
+	
 	for (int i = 0; i < first_level_branch_count; i++) {
 
+		
 
 	}
 
-
-
-
-	glfwSwapBuffers(window); //Skopiuj bufor tylny do bufora przedniego
+	glfwSwapBuffers(window);				//Skopiuj bufor tylny do bufora przedniego
 }
 
 
@@ -236,8 +264,12 @@ int main(void)
 
 	//Główna pętla
 
-	float	x, y, z,		//zmienne pozycji kamery
-		height = 0.0f;	//aktualna wysokość pnia
+	float	x, y, z,											//zmienne pozycji kamery
+		height = 0.0f;											//aktualna wysokość pnia
+	float max_height = 0.2f,branch_height=0.0f;					//na potem: powinno być losowane 
+	int first_level_branch_count = 5;							//na potem: powinno być losowane ;ilość gałezi 1 poziomu
+	
+
 	glfwSetTime(0);			//Wyzeruj licznik czasu
 
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
@@ -246,23 +278,25 @@ int main(void)
 		x = radius * sin(angle2) * cos(angle);
 		y = radius * cos(angle2);
 		z = radius * sin(angle) * sin(angle2);
-
-		float max_height = 0.2f;					//na potem: powinno być losowane 
-		int first_level_branch_count = 5;
-		//na potem: powinno być losowane ;ilość gałezi 1 poziomu
+	
 		while (height < max_height) {
 
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
-			height += 0.01f * glfwGetTime();
+			height += 0.03f * glfwGetTime();
+			//printf(" \n h: %f max: %f \n ",height,max_height);
+			if (height >= max_height /2.0f && branch_height <= 0.2) {
+				branch_height += 0.005f;
+			}
+			//printf("%f\n",branch_height);
 			glfwSetTime(0);
-			drawScene(window, x, y, z, height, first_level_branch_count); //Wykonaj procedurę rysującą
+			drawScene(window, x, y, z, height,max_height, branch_height,first_level_branch_count); //Wykonaj procedurę rysującą
 			glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 		}
 
 		glfwSetTime(0); //Wyzeruj licznik czasu
-		drawScene(window, x, y, z, height, first_level_branch_count); //Wykonaj procedurę rysującą
+		drawScene(window, x, y, z, height, max_height, branch_height,first_level_branch_count); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
