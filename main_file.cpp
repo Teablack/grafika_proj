@@ -128,13 +128,14 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 void rysujliscie(glm::mat4 Galaz) {
 
-	for (int i = 4; i < 8; i++) {
+	for (int i = 0; i < 4; i++) {
 		glm::mat4 Leaf = Galaz;
-		//Leaf = glm::rotate(Leaf,glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		Leaf = translate(Leaf, glm::vec3(0.0f, wysokosc[i], 0.0f));
+		Leaf = glm::rotate(Leaf,glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		Leaf = glm::rotate(Leaf, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
 		Leaf = glm::rotate(Leaf, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
-		if (angle_x[i] > 0) Leaf = glm::translate(Leaf, glm::vec3(0.0f, 2.5f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
-		else Leaf = glm::translate(Leaf, glm::vec3(0.0f, -2.5f*sin(angle_x[i] - 0.8f), 0.0f));
+		if (angle_x[i] > 0) Leaf = glm::translate(Leaf, glm::vec3(0.0f, -1.3f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
+		else Leaf = glm::translate(Leaf, glm::vec3(0.0f, 1.6f*sin(angle_x[i] - 0.8f), 0.0f));
 
 		/*
 			Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i], 0.0f));
@@ -150,8 +151,8 @@ void rysujliscie(glm::mat4 Galaz) {
 		Leaf = translate(Leaf, glm::vec3(0.0f, wysokosc[i], 0.0f));
 		if (angle_x[i] > 0) Leaf = glm::translate(Leaf, glm::vec3(0.0f, 5.8f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
 		else Leaf = glm::translate(Leaf, glm::vec3(0.0f, -5.8f * sin(angle_x[i] - 0.8f), 0.0f)); 
-		Leaf = glm::scale(Leaf, glm::vec3(2.1f, 2.1f / 1.2, 2.1f));
 		*/
+		Leaf = glm::scale(Leaf, glm::vec3(2.1f, 2.1f / 1.1, 2.1f));
 		glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Leaf));
 		glEnableVertexAttribArray(spTextured->a("vertex"));
 		glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, leafPositions);
@@ -182,8 +183,8 @@ void rysujgalezie(glm::mat4 Base, float branch_height, int i, int level) {
 
 		Galaz = glm::rotate(Galaz, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
 		Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
-		if (angle_x[i] > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 1.2f*11.2f * branch_height * 2.8f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
-		else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -11.2f *1.2f* branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
+		if (angle_x[i] > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 1.1f*11.2f * branch_height * 2.8f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
+		else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -11.2f *1.1f* branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
 
 		Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f*1.2f, branch_height * 2.8f)); //dlugosc na srodku
 
@@ -208,7 +209,7 @@ void rysujgalezie(glm::mat4 Base, float branch_height, int i, int level) {
 		glDisableVertexAttribArray(spTextured->a("textCoord"));
 
 
-		for (int j = 0; j < 6; j++) {
+		for (int j = 0; j < 4; j++) {
 
 
 			rysujgalezie(Galaz, branch_height, j+level, level + 1);
@@ -254,10 +255,10 @@ void rysujgalezie1poziomu(glm::mat4 Base, float branch_height, int i, int level)
 		glDisableVertexAttribArray(spTextured->a("textCoord"));
 
 
-		for (int j = 0; j < 6; j++) {
+		for (int j = 0; j < 4; j++) {
 
-		//rysujgalezie(Galaz, branch_height, j, level + 1);
-			rysujliscie(Galaz);
+			rysujgalezie(Galaz, branch_height, j, level + 1);
+		
 		}
 
 	
@@ -388,23 +389,21 @@ int main(void)
 	for (int i = 0; i < 10;i++) {
 
 		if(int even = rand() % 2)
-			angle_x[i] = (rand() % 70+40) / 100.0f;
+			angle_x[i] = (rand() % 60+30) / 100.0f;
 		else
-			angle_x[i] = (rand() % 70-120) / 100.0f;
+			angle_x[i] = (rand() % 60-90) / 100.0f;
 
 		//printf("x %f\n", angle_x[i]);
 
 		if (int even = rand() % 2)
-			angle_z[i] = (rand() % 70 + 40) / 100.0f;
+			angle_z[i] = (rand() % 60 + 30) / 100.0f;
 		else
-			angle_z[i] = (rand() % 70 - 120) / 100.0f;
+			angle_z[i] = (rand() % 60 - 90) / 100.0f;
 		//printf("z %f\n", angle_z[i]);
-		wysokosc[i] = rand()% 13 - 8;
+		wysokosc[i] = rand()% 11 - 8;
 
 	}
 
-	 
-	
 
 	glfwSetTime(0);			//Wyzeruj licznik czasu
 
@@ -420,10 +419,10 @@ int main(void)
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
-			height += 0.02f * glfwGetTime();
+			height += 0.015f * glfwGetTime();
 			
-			if (height >= max_height /2.0f && branch_height <= 0.18f) { //0.2 najadniejsze
-				branch_height += 0.01f;
+			if (height >= max_height /2.0f && branch_height <= 2.3f) { //0.2 najadniejsze
+				branch_height += 0.015f;
 			}
 			
 			glfwSetTime(0);
