@@ -34,19 +34,22 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include <time.h>  
 #include "pien1.c"
 #include "ziemia3.c"
-#include "galez.c"
+#include "galez6.c"
+#include "leaf.c"
+
 
 
 GLuint	ziemia_tex,
-		pien_tex;
+		pien_tex,
+		leaf_tex;
 float	stopnie = 90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
 		stopnie2 = 90.0f,
 		angle = glm::radians(stopnie),
 		angle2 = glm::radians(stopnie2),
 		radius = 5.0f,
-		angle_x[5],
-		angle_z[5],
-		wysokosc[5];
+		angle_x[10],
+		angle_z[10],
+		wysokosc[10];
 ;
 
 //Procedura obsługi błędów
@@ -72,6 +75,7 @@ GLuint readTexture(const char* filename) {
 	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	return tex;
 }
@@ -116,10 +120,99 @@ void initOpenGLProgram(GLFWwindow* window) {
 	//Wczytanie i import obrazka – w initOpenGLProgram
 	ziemia_tex = readTexture("ziemia_tex128.png");
 	pien_tex = readTexture("kora128_256.png");
+	leaf_tex = readTexture("leaf256.png");
 	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
 }
+
+void rysujliscie(glm::mat4 Galaz) {
+
+	for (int i = 4; i < 8; i++) {
+		glm::mat4 Leaf = Galaz;
+		/*
+			Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i], 0.0f));
+
+			Galaz = glm::rotate(Galaz, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
+			Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
+			if (angle_x[i] > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 11.8f * branch_height * 2.8f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
+			else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
+
+			Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
+		*/
+		Leaf = translate(Leaf, glm::vec3(0.0f, wysokosc[i]-20.0f, 0.0f));
+		if (angle_x[i] > 0) Leaf = glm::translate(Leaf, glm::vec3(0.0f, 5.8f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
+		else Leaf = glm::translate(Leaf, glm::vec3(0.0f, -5.8f * sin(angle_x[i] - 0.8f), 0.0f)); 
+		Leaf = glm::scale(Leaf, glm::vec3(2.6f, 2.6f, 2.6f));
+		glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Leaf));
+		glEnableVertexAttribArray(spTextured->a("vertex"));
+		glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, leafPositions);
+		glEnableVertexAttribArray(spTextured->a("texCoord"));
+
+		glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, leafTexels);
+		glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, leaf_tex);
+		glUniform1i(spTextured->u("tex"), 0);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+
+		glDrawArrays(GL_TRIANGLES, 0, leafVertices);
+		glDisableVertexAttribArray(spTextured->a("vertex"));
+		glDisableVertexAttribArray(spTextured->a("textCoord"));
+	}
+}
+
+void rysujgalezie(glm::mat4 Base, float branch_height, int i, int level) {
+
+	//printf("\n wejscie poziom: %d dlugosc : %f i: %d \n", level, branch_height, i);
+	if (level < 4) {
+		glm::mat4 Galaz = Base;
+
+		Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i], 0.0f));
+
+		Galaz = glm::rotate(Galaz, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
+		Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
+		if (angle_x[i] > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 11.8f * branch_height * 2.8f * sin(angle_x[i] + 0.8f), 0.0f)); //yxz
+		else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
+
+		Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
+
+		glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
+		glEnableVertexAttribArray(spTextured->a("vertex"));
+		glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galez6Positions);
+		glEnableVertexAttribArray(spTextured->a("texCoord"));
+
+		glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galez6Texels);
+		glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
+		glUniform1i(spTextured->u("tex"), 0);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+
+
+		glDrawArrays(GL_TRIANGLES, 0, galez6Vertices);
+		glDisableVertexAttribArray(spTextured->a("vertex"));
+		glDisableVertexAttribArray(spTextured->a("textCoord"));
+
+
+		for (int j = 0; j < 4; j++) {
+
+
+			rysujgalezie(Galaz, branch_height, j, level + 1);
+
+		}
+
+	}
+	else 
+		
+		rysujliscie(Base);
+	
+}
+
 
 
 //Zwolnienie zasobów zajętych przez program
@@ -184,6 +277,7 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
 	glDrawArrays(GL_TRIANGLES, 0, pien1Vertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
@@ -191,41 +285,12 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 
 
 	//gałęzie
-	
-
-	
-	for (int i = 0; i < first_level_branch_count; i++) {
-		if (height >= max_height / 2.0f) {
-
-			glm::mat4 Galaz = Pien;
-
-			Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i], 0.0f));
-
-			Galaz = glm::rotate(Galaz, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
-			Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
-			if (angle_x[i] > 0) Galaz = glm::translate(Galaz, glm::vec3(0.0f, 11.8f * branch_height * 2.8f * sin(angle_x[i] + 0.8), 0.0f)); //yxz
-			else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
-
-			Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
-
-
-			glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
-			glEnableVertexAttribArray(spTextured->a("vertex"));
-			glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galezPositions);
-			glEnableVertexAttribArray(spTextured->a("texCoord"));
-
-			glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galezTexels);
-			glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
-			glUniform1i(spTextured->u("tex"), 0);
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-			glDrawArrays(GL_TRIANGLES, 0, galezVertices);
-			glDisableVertexAttribArray(spTextured->a("vertex"));
-			glDisableVertexAttribArray(spTextured->a("textCoord"));
-
-
+	if (height >= max_height / 2.0f) {
+		int level = 0;
+		for (int i = 0; i < first_level_branch_count; i++) {
+		
+			rysujgalezie(Pien, branch_height, i,level);
+			
 		}
 		
 
@@ -265,23 +330,24 @@ int main(void)
 	float	x, y, z,											//zmienne pozycji kamery
 			height = 0.0f,											//aktualna wysokość pnia
 			max_height = 0.2f,branch_height=0.0f;					//na potem: powinno być losowane 
-	int first_level_branch_count = rand() % 3 + 3;				//ilość gałezi 1 poziomu wartosci od 3 do 5
+	int first_level_branch_count = rand() % 5 + 4;				//ilość gałezi 1 poziomu wartosci od 3 do 
 	
 	srand(static_cast<unsigned int>(time(0)));
-	for (int i = 0; i < first_level_branch_count;i++) {
+
+	for (int i = 0; i < 10;i++) {
 
 		if(int even = rand() % 2)
 			angle_x[i] = (rand() % 100+30) / 100.0f;
 		else
 			angle_x[i] = (rand() % 100-130) / 100.0f;
 
-		printf("x %f\n", angle_x[i]);
+		//printf("x %f\n", angle_x[i]);
 
 		if (int even = rand() % 2)
 			angle_z[i] = (rand() % 100 + 30) / 100.0f;
 		else
 			angle_z[i] = (rand() % 100 - 130) / 100.0f;
-		printf("z %f\n", angle_z[i]);
+		//printf("z %f\n", angle_z[i]);
 		wysokosc[i] = rand()% 13 - 9;
 
 	}
@@ -303,10 +369,10 @@ int main(void)
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
-			height += 0.03f * glfwGetTime();
+			height += 0.02f * glfwGetTime();
 			
-			if (height >= max_height /2.0f && branch_height <= 0.2) {
-				branch_height += 0.001f;
+			if (height >= max_height /2.0f && branch_height <= 0.18f) { //0.2 najadniejsze
+				branch_height += 0.01f;
 			}
 			
 			glfwSetTime(0);
