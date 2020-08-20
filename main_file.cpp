@@ -130,7 +130,7 @@ void rysujliscie(glm::mat4 Galaz) {
 
 	for (int i = 0; i < 6; i++) {
 		glm::mat4 Leaf = Galaz;
-		Leaf = translate(Leaf, glm::vec3(0.0f, wysokosc[i]+2.0, 0.0f));
+		Leaf = translate(Leaf, glm::vec3(0.0f, wysokosc[i]*2.0+4.0, 0.0f));
 		Leaf = glm::rotate(Leaf, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		Leaf = glm::rotate(Leaf, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
 		Leaf = glm::rotate(Leaf, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
@@ -166,7 +166,7 @@ void rysujgalezie(glm::mat4 Base, float branch_height, int i, int level) {
 
 		glm::mat4 Galaz = Base;
 
-		Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i] + 2.0f, 0.0f));
+		Galaz = translate(Galaz, glm::vec3(0.0f, wysokosc[i] , 0.0f));
 
 		Galaz = glm::rotate(Galaz, angle_x[i], glm::vec3(0.0f, 0.0f, 1.0f));
 		Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(1.0f, 0.0f, 0.0f));
@@ -227,6 +227,8 @@ void rysujgalezie1poziomu(glm::mat4 Base, float branch_height, int i, int level)
 	else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
 
 	Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
+//
+	Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(0.0f, 1.0f, 0.0f));
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
@@ -426,7 +428,7 @@ int main(void)
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
-			height += 0.015f * glfwGetTime();
+			height += 0.02f * glfwGetTime(); //0.015f
 
 			if (height >= max_height / 2.0f && branch_height <= 0.18f) {
 				branch_height += 0.01f;  //0.015
