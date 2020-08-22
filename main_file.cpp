@@ -34,7 +34,7 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include <time.h>  
 #include "pien1.c"
 #include "ziemia3.c"
-#include "galez6.c"
+#include "galez7.c"
 #include "leaf.c"
 
 
@@ -81,6 +81,7 @@ GLuint readTexture(const char* filename) {
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod) {
+	float cameraSpeed = 0.05f;
 
 	if (action == GLFW_PRESS) {
 
@@ -103,10 +104,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			angle2 = glm::radians(stopnie2);
 		}
 		if (key == GLFW_KEY_W) {
-			radius--;
+			radius -= 0.5f;
 		}
 		if (key == GLFW_KEY_S) {
-			radius++;
+			radius += 0.5f;
 		}
 
 	}
@@ -141,15 +142,21 @@ void rysujliscie(glm::mat4 Galaz) {
 		glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Leaf));
 		glEnableVertexAttribArray(spTextured->a("vertex"));
 		glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, leafPositions);
-		glEnableVertexAttribArray(spTextured->a("texCoord"));
 
+		glEnableVertexAttribArray(spTextured->a("texCoord"));
 		glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, leafTexels);
+
+		glEnableVertexAttribArray(spTextured->a("normal"));
+		glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, leafNormals);
+
 		glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, leaf_tex);
 		glUniform1i(spTextured->u("tex"), 0);
 
+		glUniform4f(spTextured->u("lp"), 3, 3, 0,1);
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
 		glDrawArrays(GL_TRIANGLES, 0, leafVertices);
 		glDisableVertexAttribArray(spTextured->a("vertex"));
@@ -184,22 +191,27 @@ void rysujgalezie(glm::mat4 Base, float branch_height, int i, int level) {
 
 		glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
 		glEnableVertexAttribArray(spTextured->a("vertex"));
-		glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galez6Positions);
+		glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galez7Positions);
 		glEnableVertexAttribArray(spTextured->a("texCoord"));
 
-		glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galez6Texels);
+		glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galez7Texels);
 		glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
 		glUniform1i(spTextured->u("tex"), 0);
 
+		glEnableVertexAttribArray(spTextured->a("normal"));
+		glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, galez7Normals);
+
+		glUniform4f(spTextured->u("lp"), 3,3,0,1);
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_NEAREST_MIPMAP_NEAREST);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
 
-		glDrawArrays(GL_TRIANGLES, 0, galez6Vertices);
+		glDrawArrays(GL_TRIANGLES, 0, galez7Vertices);
 		glDisableVertexAttribArray(spTextured->a("vertex"));
 		glDisableVertexAttribArray(spTextured->a("textCoord"));
 
@@ -232,21 +244,26 @@ void rysujgalezie1poziomu(glm::mat4 Base, float branch_height, int i, int level)
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
-	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galez6Positions);
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, galez7Positions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
 
-	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galez6Texels);
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, galez7Texels);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
+	glEnableVertexAttribArray(spTextured->a("normal"));
+	glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, galez7Normals);
+
+	glUniform4f(spTextured->u("lp"), 3,3,0,1);
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_NEAREST_MIPMAP_NEAREST);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 
 
-	glDrawArrays(GL_TRIANGLES, 0, galez6Vertices);
+	glDrawArrays(GL_TRIANGLES, 0, galez7Vertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("textCoord"));
 
@@ -296,6 +313,11 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, ziemia_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
+	glEnableVertexAttribArray(spTextured->a("normal"));
+	glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, ziemia3Normals);
+
+	glUniform4f(spTextured->u("lp"), 3,3,0,1);
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -322,6 +344,11 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pien1Texels);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
 	glUniform1i(spTextured->u("tex"), 0);
+
+	glEnableVertexAttribArray(spTextured->a("normal"));
+	glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, pien1Normals);
+
+	glUniform4f(spTextured->u("lp"), 3,3,0,1);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -428,7 +455,7 @@ int main(void)
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
-			height += 0.02f * glfwGetTime(); //0.015f
+			height += 0.005f* glfwGetTime(); //0.015f //0.02f
 
 			if (height >= max_height / 2.0f && branch_height <= 0.18f) {
 				branch_height += 0.01f;  //0.015
