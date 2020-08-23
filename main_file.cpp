@@ -32,25 +32,32 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "lodepng.h"
 #include "shaderprogram.h"
 #include <time.h>  
-#include "pien1.c"
+#include "pien5.c"
 #include "ziemia3.c"
 #include "galez7.c"
 #include "leaf.c"
 
 
 
-GLuint	ziemia_tex,
-pien_tex,
-leaf_tex;
-float	stopnie = 90.0f,  // na potem: zrobic jedna jednostke , usunac zmienne stopnie 
-stopnie2 = 90.0f,
-angle = glm::radians(stopnie),
-angle2 = glm::radians(stopnie2),
-radius = 5.0f,
+GLuint	ziemia_tex,pien_tex,leaf_tex;
+float
 angle_x[10],
 angle_z[10],
-wysokosc[10];
+wysokosc[10],
+yaw = 0.0f,
+pitch = 0.0f,
+lastX, lastY
 ;
+
+bool firstMouse = true;
+
+
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 10.0f); //to gdzie się znajduje kamera - położenie  xyz
+glm::vec3 cameraDirection = glm::normalize(cameraPos);
+glm::vec3 cameraFront = glm::vec3(0.0f,0.0f,-1.0f); 
+glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);  //ujemne - obrazek do góry nogami 
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -81,36 +88,59 @@ GLuint readTexture(const char* filename) {
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod) {
-	float cameraSpeed = 0.05f;
+	float cameraSpeed = 0.3f;
 
 	if (action == GLFW_PRESS) {
 
-		if (key == GLFW_KEY_LEFT) {
-
-			stopnie = stopnie + 5;
-			angle = glm::radians(stopnie);
-
-		}
-		if (key == GLFW_KEY_RIGHT) {
-			stopnie = stopnie - 5;
-			angle = glm::radians(stopnie);
-		}
-		if (key == GLFW_KEY_UP) {
-			stopnie2 = stopnie2 - 5;
-			angle2 = glm::radians(stopnie2);
-		}
-		if (key == GLFW_KEY_DOWN) {
-			stopnie2 = stopnie2 + 5;
-			angle2 = glm::radians(stopnie2);
-		}
 		if (key == GLFW_KEY_W) {
-			radius -= 0.5f;
+			cameraPos += cameraSpeed * cameraFront; //blizej
 		}
 		if (key == GLFW_KEY_S) {
-			radius += 0.5f;
+			cameraPos -= cameraSpeed * cameraFront; //dalej
+		}
+		if (key == GLFW_KEY_A) {
+			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed; //w lewo
+		}
+		if (key == GLFW_KEY_D) {
+			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed; //w prawo
 		}
 
 	}
+}
+
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+	
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(direction);
 }
 
 
@@ -125,6 +155,9 @@ void initOpenGLProgram(GLFWwindow* window) {
 	glClearColor(0, 0.8f, 1, 1); //Ustaw kolor czyszczenia bufora kolorów
 	glEnable(GL_DEPTH_TEST); //Włącz test głębokości na pikselach
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  //wyłącz kursor
+
 }
 
 void rysujliscie(glm::mat4 Galaz) {
@@ -239,7 +272,7 @@ void rysujgalezie1poziomu(glm::mat4 Base, float branch_height, int i, int level)
 	else Galaz = glm::translate(Galaz, glm::vec3(0.0f, -12.0f * branch_height * 2.8f * sin(angle_x[i] - 0.8f), 0.0f)); //-yxz // 11.8f * branch_height * 2.8f * sin(angle_z-0.3)
 
 	Galaz = glm::scale(Galaz, glm::vec3(branch_height * 2.8f, branch_height * 2.8f, branch_height * 2.8f));
-//
+
 	Galaz = glm::rotate(Galaz, angle_z[i], glm::vec3(0.0f, 1.0f, 0.0f));
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Galaz));
@@ -286,14 +319,12 @@ void freeOpenGLProgram(GLFWwindow* window) {
 }
 
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window, float x, float y, float z, float height, float max_height, float branch_height, int first_level_branch_count) {
+void drawScene(GLFWwindow* window,float height, float max_height, float branch_height, int first_level_branch_count) {
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Wyczyść bufor koloru i bufor głębokości
 
-	glm::mat4 V = glm::lookAt(glm::vec3(x, y, z),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)); //Wylicz macierz widoku
+	glm::mat4 V = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); //Wylicz macierz widoku
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 1.0f, 50.0f);		//Wylicz macierz rzutowania
 
 	spTextured->use();
@@ -338,15 +369,15 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 
 	glUniformMatrix4fv(spTextured->u("M"), 1, false, glm::value_ptr(Pien));
 	glEnableVertexAttribArray(spTextured->a("vertex"));
-	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, pien1Positions);
+	glVertexAttribPointer(spTextured->a("vertex"), 4, GL_FLOAT, false, 0, pien5Positions);
 	glEnableVertexAttribArray(spTextured->a("texCoord"));
 
-	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pien1Texels);
+	glVertexAttribPointer(spTextured->a("texCoord"), 2, GL_FLOAT, false, 0, pien5Texels);
 	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, pien_tex);
 	glUniform1i(spTextured->u("tex"), 0);
 
 	glEnableVertexAttribArray(spTextured->a("normal"));
-	glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, pien1Normals);
+	glVertexAttribPointer(spTextured->a("normal"), 2, GL_FLOAT, false, 0, pien5Normals);
 
 	glUniform4f(spTextured->u("lp"), 3,3,0,1);
 
@@ -354,7 +385,7 @@ void drawScene(GLFWwindow* window, float x, float y, float z, float height, floa
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
-	glDrawArrays(GL_TRIANGLES, 0, pien1Vertices);
+	glDrawArrays(GL_TRIANGLES, 0, pien5Vertices);
 	glDisableVertexAttribArray(spTextured->a("vertex"));
 	glDisableVertexAttribArray(spTextured->a("textCoord"));
 
@@ -403,7 +434,7 @@ int main(void)
 	//Główna pętla
 	srand(static_cast<unsigned int>(time(0)));
 
-	float	x, y, z,											//zmienne pozycji kamery
+	float											//zmienne pozycji kamery
 		height = 0.0f,											//aktualna wysokość pnia
 		max_height = 0.2f, branch_height = 0.0f;					//na potem: powinno być losowane 
 	int first_level_branch_count = rand() % 5 + 5;				//ilość gałezi 1 poziomu wartosci od 3 do 
@@ -446,24 +477,26 @@ int main(void)
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
 	{
 		//wyliczenie aktualnej pozycji kamery
+		/*
 		x = radius * sin(angle2) * cos(angle);
 		y = radius * cos(angle2);
 		z = radius * sin(angle) * sin(angle2);
-
+		*/
 		while (height < max_height) {
-
+			/*
 			x = radius * sin(angle2) * cos(angle);
 			y = radius * cos(angle2);
 			z = radius * sin(angle) * sin(angle2);
+			*/
 			height += 0.005f* glfwGetTime(); //0.015f //0.02f
 
 			if (height >= max_height / 2.0f && branch_height <= 0.18f) {
 				branch_height += 0.01f;  //0.015
-				printf("\n%f\n", branch_height);
+				//printf("\n%f\n", branch_height);
 			}
 
 			glfwSetTime(0);
-			drawScene(window, x, y, z, height, max_height, branch_height, first_level_branch_count); //Wykonaj procedurę rysującą
+			drawScene(window, height, max_height, branch_height, first_level_branch_count); //Wykonaj procedurę rysującą
 			glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 		}
 
@@ -474,7 +507,7 @@ int main(void)
 
 
 		glfwSetTime(0); //Wyzeruj licznik czasu
-		drawScene(window, x, y, z, height, max_height, branch_height, first_level_branch_count); //Wykonaj procedurę rysującą
+		drawScene(window,  height, max_height, branch_height, first_level_branch_count); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
