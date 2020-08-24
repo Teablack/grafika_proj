@@ -25,7 +25,7 @@ void main(void) {
     vec4 v = normalize(vec4(0, 0, 0, 1) - V * M * vertex); //Wektor do obserwatora w przestrzeni oka
 
     nl = clamp(dot(n, l),0,1); //Kosinus kąta pomiędzy wektorami n i l.
-    rv = pow(clamp(dot(r, v), 0, 1), 25); // Kosinus kąta pomiędzy wektorami r i v podniesiony do 25 potęgi
+    rv = pow(clamp(dot(r, v), 0, 1), 256); // Kosinus kąta pomiędzy wektorami r i v podniesiony do 25 potęgi
     cord=texCoord;
     
     gl_Position=P*V*M*vertex;
